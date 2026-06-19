@@ -26,6 +26,20 @@ from .optree import (
 
 QISKIT_SMALLER_1_2 = version.parse(qiskit_version) < version.parse("1.2.0")
 
+# Global counter for tracking total circuits executed across all evaluation calls
+_total_circuits_executed = 0
+
+
+def get_total_circuits_executed():
+    """Return the total number of circuits executed since the last reset."""
+    return _total_circuits_executed
+
+
+def reset_total_circuits_executed():
+    """Reset the global circuit counter to zero."""
+    global _total_circuits_executed
+    _total_circuits_executed = 0
+
 from ..executor import (
     QISKIT_SMALLER_2_0,
     BaseSamplerV1,
@@ -1275,6 +1289,8 @@ class OpTreeEvaluate:
                 sampler_result = sampler.run(pubs).result()
             else:
                 raise ValueError("Unknown sampler type!")
+            global _total_circuits_executed
+            _total_circuits_executed += len(total_circuit_list)
         else:
             sampler_result = []
         # print("Sampler run time: ", time.time() - start)
@@ -1441,7 +1457,9 @@ class OpTreeEvaluate:
         total_circuit_list = []
         total_operator_list = []
         total_parameter_list = []
+       
         for i, dictionary_circuit__ in enumerate(dictionary_circuit):
+
             # Build circuit list and circuit tree from the circuit OpTree
             circuit_list, parameter_list, circuit_tree = _build_circuit_list(
                 circuit, dictionary_circuit__, detect_duplicates
@@ -1490,7 +1508,7 @@ class OpTreeEvaluate:
 
         # Evaluation via the estimator
         start = time.time()
-        # print("Number of circuits for estimator: ", len(total_circuit_list))
+        print("Number of circuits for estimator: ", len(total_circuit_list))
         if len(total_circuit_list) == 0:
             return _evaluate_index_tree(evaluation_tree, [])
 
@@ -1513,7 +1531,9 @@ class OpTreeEvaluate:
         else:
             raise ValueError("Unknown estimator type!")
 
-        # print("Estimator run time: ", time.time() - start)
+        global _total_circuits_executed
+        _total_circuits_executed += len(total_circuit_list)
+        print("Estimator run time: ", time.time() - start)
 
         # Assembly the final values from the evaluation tree
         start = time.time()
@@ -1595,7 +1615,7 @@ class OpTreeEvaluate:
 
         # Evaluation via the estimator
         start = time.time()
-        # print("Number of circuits for estimator: ", len(total_circuit_list))
+        print("Number of circuits for estimator: ", len(total_circuit_list))
         if len(total_circuit_list) == 0:
             return _evaluate_index_tree(evaluation_tree, [])
 
@@ -1617,6 +1637,8 @@ class OpTreeEvaluate:
                 )
         else:
             raise ValueError("Unknown estimator type!")
+        global _total_circuits_executed
+        _total_circuits_executed += len(total_circuit_list)
         # print("Run time of estimator: ", time.time() - start)
 
         # Final assembly of the results
@@ -1704,7 +1726,7 @@ class OpTreeEvaluate:
 
         # Evaluation via the sampler
         start = time.time()
-        # print("Number of circuits for sampler: ", len(total_circuit_list))
+        print("Number of circuits for sampler: ", len(total_circuit_list))
         if len(total_circuit_list) == 0:
             _evaluate_index_tree(evaluation_tree, [])
 
@@ -1716,7 +1738,9 @@ class OpTreeEvaluate:
             sampler_result = sampler.run(pubs).result()
         else:
             raise ValueError("Unknown sampler type!")
-        # print("Sampler run time: ", time.time() - start)
+        global _total_circuits_executed
+        _total_circuits_executed += len(total_circuit_list)
+        print("Sampler run time: ", time.time() - start)
 
         # Computation of the expectation values from the sampler results
         start = time.time()
@@ -1728,7 +1752,7 @@ class OpTreeEvaluate:
 
         # Final assembly of the results
         result = _evaluate_index_tree(evaluation_tree, expec)
-        # print("Post-processing: ", time.time() - start)
+        print("Post-processing: ", time.time() - start)
 
         return result
 
