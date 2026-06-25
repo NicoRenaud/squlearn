@@ -213,7 +213,7 @@ def _gen_qubit_mapping(circuit: QuantumCircuit) -> dict:
                 bit_locations[qubit] = {"register": None, "index": index}
         for key, val in layout.get_virtual_bits().items():
             bit_register = bit_locations[key]["register"]
-            if bit_register is None or bit_register.name != "ancilla":
+            if bit_register is None or bit_register.name not in ["ancilla", "resonators"]:
                 dic[bit_locations[key]["index"]] = val
     except:
         for i in range(circuit.num_qubits):
