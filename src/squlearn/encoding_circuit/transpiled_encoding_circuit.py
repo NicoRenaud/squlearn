@@ -65,7 +65,7 @@ class TranspiledEncodingCircuit(EncodingCircuitBase):
             self._transpiled_circuit = self._transpile_func(self._circuit, self._backend)
         else:
             if "optimization_level" not in kwargs:
-                kwargs["optimization_level"] = 3
+                kwargs["optimization_level"] = 0 #3
             if "seed_transpiler" not in kwargs:
                 kwargs["seed_transpiler"] = 0
             self._transpiled_circuit = transpile(self._circuit, self._backend, **kwargs)

@@ -29,6 +29,8 @@ QISKIT_SMALLER_1_2 = version.parse(qiskit_version) < version.parse("1.2.0")
 # Global counter for tracking total circuits executed across all evaluation calls
 _total_circuits_executed = 0
 
+__BATCH__ = True
+
 
 def get_total_circuits_executed():
     """Return the total number of circuits executed since the last reset."""
@@ -1519,8 +1521,17 @@ class OpTreeEvaluate:
                 .values
             )
         elif isinstance(estimator, BaseEstimatorV2):
+
             pubs = list(zip(total_circuit_list, total_operator_list, total_parameter_list))
-            estimator_result = np.array([r.data.evs for r in estimator.run(pubs).result()])
+            if __BATCH__:
+                estimator_result = np.array([r.data.evs for r in estimator.run(pubs).result()])
+            else:
+                estimator_result = []
+                for _pub in pubs:
+                    r = estimator.run([_pub]).result()
+                    estimator_result.append(r[0].data.evs)
+                estimator_result = np.array(estimator_result)
+
             # Flatten/squeeze result if it's multi-dimensional to handle Qiskit API changes
             if estimator_result.ndim > 1:
                 estimator_result = (
